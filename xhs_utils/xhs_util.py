@@ -6,6 +6,7 @@ import execjs
 import requests
 from pojo.note import Note_Detail
 from pojo.user import User_Detail
+import pandas as pd
 
 js = execjs.compile(open(r'./static/info.js', 'r', encoding='utf-8').read())
 def decodedUniChars(url):
@@ -125,6 +126,26 @@ def save_note_detail(path, note):
         f.write(f"笔记上传时间: {timestamp_to_str(note.upload_time)}\n")
         f.write(f"笔记标签: {note.tag_list}\n")
         f.write(f"笔记ip归属地: {note.ip_location}\n")
+        
+def save_comments_detail(path, comments):
+    pd.DataFrame(comments).to_csv(path + '/' + 'comments.csv', encoding='utf-8-sig', index=False)
+
+def handle_note_comments_info(data):
+    sub_comments = []
+    if int(data['sub_comment_count']) > 1:
+        for comment in data['sub_comments']:
+            sub_comments.append({
+                'content': comment['content'],
+                'time': timestamp_to_time(comment['create_time'])
+            })
+    return {
+        'content': data['content'],
+        'user_url': "https://www.xiaohongshu.com/user/profile/" + data['user_info']['user_id'],
+        'user_name': data['user_info']['nickname'],
+        'time': timestamp_to_time(data['create_time']),
+        'sub_comments' : sub_comments if sub_comments else []
+    }
+    
 
 def handle_note_info(data):
     note_id = data['id']
